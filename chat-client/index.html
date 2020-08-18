@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天客户端</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+
+<style>
+    * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    html,
+    body,
+    #app {
+        width: 100%;
+        height: 100%;
+    }
+
+    .container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .main-wrap {
+        flex-grow: 1;
+        background-color: rgb(156, 176, 238);
+        overflow:auto;
+        padding-bottom: 10px;
+    }
+
+    .chat-detail-list-item {
+        display: flex;
+        flex-direction: row;
+        margin-top: 10px;
+    }
+
+    .chat-detail-content {
+        position: relative;
+        padding: 16px 12px;
+        border-radius: 4px;
+        margin-left: 8px;
+    }
+
+    .detail-content-left::before {
+        content: "";
+        position: absolute;
+        border: 10px solid transparent;
+        border-right-color: #fff;
+        top: 17px;
+        left: -18px;
+    }
+
+    .other .chat-detail-content {
+        background: #fff;
+        word-break:break-all;
+        max-width: 60%;
+    }
+
+    .my {
+        justify-content: flex-end;
+    }
+
+    .my .chat-detail-content {
+        background: rgb(150, 237, 106);
+        margin-right: 10px;
+        max-width: 60%;
+        word-break:break-all;
+    }
+
+    .detail-content-right::before {
+        content: "";
+        position: absolute;
+        border: 10px solid transparent;
+        border-left-color: rgb(150, 237, 106);
+        top: 17px;
+        right: -19px;
+    }
+
+    .avatar-wrap {
+        padding-right: 10px;
+        margin-left: 10px;
+        display: flex;
+        align-items: center;
+        flex-shrink:0
+    }
+
+    .title {
+        width: 100%;
+        height: 40px;
+        text-align: center;
+        line-height: 40px;
+        font-weight: bolder;
+        border-bottom:1px solid rgb(211, 209, 209);
+        background-color: rgb(206, 225, 252);
+    }
+
+    .send-wrap {
+        width: 100%;
+        height: 50px;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .send-wrap button{
+        width: 60px;
+    }
+
+    .send-wrap input{
+        font-size: 20px;
+        outline: none;
+        flex-grow: 1;
+    }
+</style>
+
+<body>
+    <div id='app'>
+        <div class="container">
+            <div class="title">产教授前端授课群聊</div>
+            <div class="main-wrap" ref='scroll'>
+                <div v-for="item in messageList">
+                    <div class="chat-detail-list-item my" v-if="item.name == '产教授'">
+                        <div class="chat-detail-content detail-content-right">{{item.message}}</div>
+                        <div class="avatar-wrap">
+                            {{item.name}}
+                        </div>
+                    </div>
+                    <div class="chat-detail-list-item other" v-else>
+                        <div class="avatar-wrap">
+                            {{item.name}}
+                        </div>
+                        <div class="chat-detail-content detail-content-left">{{item.message}}</div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="send-wrap">
+                <input type="text" id="input" @keyup.enter="btnSend()">
+                <button @click="btnSend()">发送</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        var socket = new WebSocket("ws://192.168.0.40:8080");
+
+        var messageObj = {
+            name: "产教授",
+            message: ""
+        }
+
+        var messageList = [];
+
+        // Connection opened ：服务器刚运行时展现出来的内容
+        // socket.addEventListener('open', function (event) {
+        //     messageObj.message =  messageObj.name;
+        //     socket.send(JSON.stringify(messageObj));
+        // });
+
+        // Listen for messages：监听用户发送的信息
+        socket.addEventListener('message', function (event) {
+            // console.log(JSON.parse(event.data).name);
+            messageList.push(JSON.parse(event.data));
+        })
+
+        let app = new Vue({
+            el: "#app",
+            data: {
+                messageList: messageList
+            },
+            methods: {
+                btnSend() {
+                    let text = document.getElementById("input").value;
+                    if (text.trim()) {
+                        messageObj.message = text.trim();
+                        socket.send(JSON.stringify(messageObj));
+                    }
+
+                    document.getElementById("input").value = "";
+                }
+            },
+            updated(){
+                this.$refs.scroll.scrollTop = this.$refs.scroll.scrollHeight;
+            }
+        });
+    </script>
+</body>
+
+</html>
